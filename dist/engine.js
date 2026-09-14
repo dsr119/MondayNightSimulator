@@ -50,11 +50,12 @@ export function validation(state){
  const starters=[];
  for(const t of state.teams){add(Number.isInteger(t.number)&&t.number>0,'Invalid team number.');add(t.players.length===5,'Set five starters for '+t.name);starters.push(...t.players);for(const id of t.players)add(state.bowlers.some(b=>b.id===id),'Unknown starter on '+t.name);}
  add(new Set(starters).size===starters.length,'A bowler starts on multiple teams.');
- for(const b of state.bowlers)add(Number.isFinite(b.entering)&&b.entering>=0&&b.entering<=300,'Entering average required: '+b.name);
+ for(const b of state.bowlers)add((b.entering===null||Number.isFinite(b.entering)&&b.entering>=0&&b.entering<=300),'Entering average required: '+b.name);
  return issues;
 }
 export function forecastIssues(state){
  const issues=validation(state),divs=[...new Set(state.teams.map(t=>t.division))];
+ for(const b of state.bowlers){if(b.vacancy)issues.push('Fill open position: '+b.name);else if(!Number.isFinite(b.entering))issues.push('Entering average required: '+b.name);}
  if(!state.rules.assumptionsConfirmed)issues.push('Review and confirm forecast assumptions in Setup.');
  if(state.teams.some(t=>!t.division)||divs.length!==(state.teams.length===20?4:3))issues.push('Assign the required '+(state.teams.length===20?4:3)+' divisions.');
  if(divs.length===3&&!state.rules.fillEightWithWildcards)issues.push('Three divisions provide six half-winner berths; confirm how the other two playoff spots are filled.');
@@ -87,6 +88,7 @@ export function validateWorkspace(state){
 }
 export function random(seed){let a=seed>>>0;return()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
 export function profile(state,b){
+ if(b.vacancy||!Number.isFinite(b.entering))return {mean:null,sd:null,priorGames:(b.history||[]).reduce((n,h)=>n+(h.scores||[]).length,0),currentGames:actualGames(state,b.id).length};
  const prior=(b.history||[]).flatMap(h=>h.scores||[]).filter(Number.isFinite),recent=actualGames(state,b.id),anchor=b.entering;
  const priorMean=prior.length?(sum(prior)+anchor*12)/(prior.length+12):anchor;
  const mu=(sum(recent)+priorMean*30)/(recent.length+30),all=[...prior,...recent],avg=mean(all);

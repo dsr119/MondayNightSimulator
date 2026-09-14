@@ -19,9 +19,9 @@ Built:
 
 ## Data still required
 
-The supplied confirmed-teams image was found, but the available extracted text lost row/column alignment and image pixels were unavailable. No guessed team assignments were seeded.
+The reattached roster was visually transcribed on September 14: 20 teams, 96 named bowlers and four vacancies. New workspaces load it automatically; empty saved workspaces can load it from Setup. Names, listed order and team numbers are preserved. Entering averages remain null, and divisions remain unassigned. The attached 2025-2026 Player History.zip could not be extracted with the tools available in this session and has not been imported.
 The supplied rule sheet says the official schedule will follow team/division finalization; no official schedule was found.
-Import confirmed roster/entering averages and schedule in Setup. Prior-season records are not current rosters.
+Enter confirmed entering averages in Teams and import the schedule in Setup. Forecasts stay blocked for missing averages and unfilled vacancies. Prior-season records are not current rosters.
 The rules leave details unresolved; Setup explicitly gates forecasts until assumptions are reviewed. See config/league-rules.json.
 
 ## Run locally

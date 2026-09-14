@@ -26,7 +26,7 @@ export function importRoster(state,text){
   if(!r.bowler_id||!r.bowler)throw Error('Bowler ID and name are required.');
   if(bowlers.has(r.bowler_id))throw Error('Duplicate bowler ID '+r.bowler_id);
   const old=state.bowlers.find(b=>b.id===r.bowler_id);
-  bowlers.set(r.bowler_id,{id:r.bowler_id,name:r.bowler,team,entering:num(r.entering,'entering average'),history:old?.history||[]});
+  bowlers.set(r.bowler_id,{id:r.bowler_id,name:r.bowler,team,entering:r.entering===''?null:num(r.entering,'entering average'),vacancy:r.status==='vacancy',history:old?.history||[]});
   if(team){
    if(!r.team_name||slot<1)throw Error('Regular bowlers need a team name and slot 1–5.');
    let t=teams.get(team);if(!t){t={number:team,name:r.team_name,division:r.division,players:Array(5).fill(null)};teams.set(team,t);}
@@ -69,7 +69,7 @@ export function importScores(state,text,{replace=false,officerConfirmed=false}={
   if(types.some(t=>!['actual','blind','vacancy'].includes(t)))throw Error('Type must be actual, blind, or vacancy.');
   if(types.includes('vacancy')&&!types.every(t=>t==='vacancy'))throw Error('Use a separate full vacancy position; partial games support actual/blind.');
   const vacancy=types.every(t=>t==='vacancy'),bowler=state.bowlers.find(b=>b.id===r.bowler_id);
-  if(!vacancy&&!bowler)throw Error('Unknown bowler ID '+r.bowler_id+'. Add substitutes to the roster before importing.');
+  if(!vacancy&&(!bowler||bowler.vacancy))throw Error('Unknown bowler ID '+r.bowler_id+'. Add substitutes to the roster before importing.');
   const average=r.average!==''&&r.average!=null?num(r.average,'official average'):vacancy?150:leagueAverage(next,bowler.id,week);
   const h=r.handicap!==''&&r.handicap!=null?integer(r.handicap,'official handicap',-100,240):handicap(average,state.rules);
   const scores=types.map((type,i)=>type==='vacancy'?150:type==='blind'?Math.max(0,Math.floor(average)-10):integer(r['game'+(i+1)],'game score'));
@@ -88,5 +88,10 @@ export function importHistory(state,text){
 export function scoresTemplate(state,week){
  const s=state.schedule.find(s=>s.week===week);if(!s||s.kind==='position')return TEMPLATES.scores;
  const quote=v=>'"'+String(v??'').replaceAll('"','""')+'"';
- return TEMPLATES.scores+s.pairs.flatMap(([a,b])=>[a,b].filter(Boolean).flatMap(team=>state.teams.find(t=>t.number===team).players.map((id,i)=>[week,team,team===a?b:a,i+1,id,'','','','actual','actual','actual',leagueAverage(state,id,week),handicap(leagueAverage(state,id,week),state.rules)].map(quote).join(',')))).join('\n')+'\n';
+ return TEMPLATES.scores+s.pairs.flatMap(([a,b])=>[a,b].filter(Boolean).flatMap(team=>state.teams.find(t=>t.number===team).players.map((id,i)=>{
+  const bowler=state.bowlers.find(b=>b.id===id),type=bowler?.vacancy?'vacancy':'actual';
+  let avg='';if(type==='vacancy')avg=150;else try{avg=leagueAverage(state,id,week);}catch{}
+  const h=avg===''?'':handicap(avg,state.rules);
+  return [week,team,team===a?b:a,i+1,id,'','','',type,type,type,avg,h].map(quote).join(',');
+ }))).join('\n')+'\n';
 }
