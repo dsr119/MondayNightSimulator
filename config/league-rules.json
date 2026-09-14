@@ -1,0 +1,83 @@
+{
+  "league": "Carbondale Commercial",
+  "season": "2026-2027",
+  "startDate": "2026-09-14",
+  "weeks": 32,
+  "halves": [
+    {
+      "start": 1,
+      "end": 16
+    },
+    {
+      "start": 17,
+      "end": 32
+    }
+  ],
+  "players": 5,
+  "gamesPerWeek": 3,
+  "handicap": {
+    "percent": 85,
+    "base": 240,
+    "rounding": "requires confirmation",
+    "negative": "requires confirmation"
+  },
+  "points": {
+    "individualPerGame": 1,
+    "teamPerGame": 4,
+    "teamSeries": 3
+  },
+  "positionWeeks": [
+    10,
+    13,
+    16,
+    26,
+    29,
+    32
+  ],
+  "blind": {
+    "deduction": 10,
+    "canWinIndividual": false,
+    "opponentMustBeat": true
+  },
+  "vacancy": 150,
+  "bye": {
+    "teamGameBelowAverage": 50,
+    "teamSeriesBelowAverage": 150,
+    "individualBelowAverage": 10
+  },
+  "playoffs": {
+    "teams": 8,
+    "seeding": "Division half winners ahead of wildcard teams; season points within groups",
+    "firstRound": [
+      [
+        1,
+        8
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        4,
+        5
+      ]
+    ],
+    "games": 3,
+    "points": 30,
+    "tieRolloffPoints": 9,
+    "reseed": false
+  },
+  "unresolved": [
+    "Handicap rounding and negative handicap",
+    "Position-round grouping and standings tiebreak order",
+    "Three divisions produce six half-winner berths; method of filling remaining two spots",
+    "Multi-team half roll-offs and equal-record playoff seeding",
+    "Vacancy individual-point treatment",
+    "Playoff repeated tied roll-off resolution"
+  ],
+  "source": "26-27 CARBONDALE COMMERCIAL BOWLING LEAGUE RULES.pdf"
+}
