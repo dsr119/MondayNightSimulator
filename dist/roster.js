@@ -174,6 +174,15 @@ export function loadConfirmedRoster(state){
   });
   next.teams.push({number:team,name:row[0],division:'',players});
  }
- next.sourceNotes=['Roster transcribed from rosters.jpg supplied 2026-09-14. Team numbers and listed order preserved.','96 named bowlers and four open positions; entering averages and divisions pending.','2025-2026 Player History.zip received but not yet extracted.','Official schedule pending.'];
+ next.sourceNotes=['Roster transcribed from rosters.jpg supplied 2026-09-14. Team numbers and listed order preserved.','96 named bowlers and four open positions; entering averages and divisions pending.','2025-2026 Player History.zip received but not yet extracted.','Week 1 confirmed: 1–2, 3–4, through 19–20. Later matchups and lane assignments pending.'];
+ return addConfirmedWeekOne(next);
+}
+
+export function addConfirmedWeekOne(state){
+ if(state.schedule.some(s=>s.week===1)||state.results.some(r=>r.week===1))throw Error('Week 1 already has a schedule or results; existing data has been preserved.');
+ if(state.teams.length!==20||!Array.from({length:20},(_,i)=>i+1).every(n=>state.teams.some(t=>t.number===n)))throw Error('Week 1 confirmation requires the 20 numbered teams.');
+ const next=structuredClone(state);
+ next.schedule.push({week:1,kind:'regular',pairs:Array.from({length:10},(_,i)=>[2*i+1,2*i+2]),lanes:Array(10).fill(null)});
+ next.schedule.sort((a,b)=>a.week-b.week);
  return next;
 }
