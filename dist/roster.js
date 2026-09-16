@@ -1,5 +1,6 @@
+import {applySuppliedEnteringAverages} from './bowler-averages.js';
 // Transcribed from the user-supplied rosters.jpg, 2026-09-14.
-// Team numbers and displayed order preserved; divisions and entering averages not supplied.
+// Team numbers and displayed order preserved; missing averages supplemented below.
 // Four blank/open positions are vacancies, not inferred people.
 export const CONFIRMED_ROSTER=[
   [
@@ -174,8 +175,8 @@ export function loadConfirmedRoster(state){
   });
   next.teams.push({number:team,name:row[0],division:'',players});
  }
- next.sourceNotes=['Roster transcribed from rosters.jpg supplied 2026-09-14. Team numbers and listed order preserved.','96 named bowlers and four open positions; entering averages and divisions pending.','2025-2026 Player History.zip received but not yet extracted.','Week 1 confirmed: 1–2, 3–4, through 19–20. Later matchups and lane assignments pending.'];
- return addConfirmedWeekOne(next);
+ next.sourceNotes=['Roster transcribed from rosters.jpg supplied 2026-09-14. Team numbers and listed order preserved.','96 named bowlers and four open positions; missing entering averages supplemented from matched names in Bowler List (8).xlsx. Divisions pending.','2025-2026 Player History.zip received but not yet extracted.','Week 1 confirmed: 1–2, 3–4, through 19–20. Later matchups and lane assignments pending.'];
+ return applySuppliedEnteringAverages(addConfirmedWeekOne(next)).state;
 }
 
 export function addConfirmedWeekOne(state){

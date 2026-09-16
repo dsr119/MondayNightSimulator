@@ -19,7 +19,7 @@ Built:
 
 ## Data still required
 
-The reattached roster was visually transcribed on September 14: 20 teams, 96 named bowlers and four vacancies. New workspaces load it automatically; empty saved workspaces can load it from Setup. Names, listed order and team numbers are preserved. Entering averages remain null, and divisions remain unassigned. The attached 2025-2026 Player History.zip could not be extracted with the tools available in this session and has not been imported.
+The reattached roster was visually transcribed on September 14: 20 teams, 96 named bowlers and four vacancies. New workspaces load it automatically; empty saved workspaces can load it from Setup. Names, listed order and team numbers are preserved. Missing entering averages are supplemented from matched names in the September 16 bowler list; unmatched averages remain null, and divisions remain unassigned. The attached 2025-2026 Player History.zip could not be extracted with the tools available in this session and has not been imported.
 The supplied rule sheet says the official schedule will follow team/division finalization; no official schedule was found.
 Enter confirmed entering averages in Teams and import the schedule in Setup. Forecasts stay blocked for missing averages and unfilled vacancies. Prior-season records are not current rosters.
 The rules leave details unresolved; Setup explicitly gates forecasts until assumptions are reviewed. See config/league-rules.json.
@@ -63,7 +63,7 @@ Entering averages are supplied by the administrator after applying Rule 6; the p
 - Model mean blends prior history / entering average and actual current scores, with a 30-game prior weight. Variance is regularized toward 30 pins; shared lane/night variation is included.
 - Two halves of 16 weeks; position rounds in Weeks 10,13,16,26,29,32.
 - Before official divisions arrive in Week 3, wholly unassigned rosters use a fresh seeded, balanced division draw per simulated season (20 teams: three divisions of 7, 7, and 6). That draw stays fixed for both halves and governs position rounds and qualification. No random assignments are saved to the roster. Projections are labeled provisional. Enter all official divisions in Teams & bowlers and rerun; partial assignments block forecasts. Other missing inputs still block forecasts.
-- Division half winners qualify; remaining slots are filled by season-point wildcards only under the explicit three-division assumption when needed. Division winners seed ahead of wildcards.
+- Division half winners qualify; remaining slots are filled by the highest full-season points among teams not already qualified, as confirmed by the user. Division winners seed ahead of wildcards.
 - Tied half qualification uses one-game point roll-offs. Multi-team ties use a randomized-order knockout assumption. Seeding ties use that same provisional tie resolver.
 - Position-round ties use scratch team average then team number. Odd division groups receive a bye under the selected provisional grouping.
 - Vacancy positions currently behave as non-actual blind positions for individual points. Confirm local interpretation before importing vacancy matchups.
@@ -79,3 +79,7 @@ Entering averages are supplied by the administrator after applying Rule 6; the p
 The app belongs on a review branch. Main initially contains only the repository initialization README.
 The included Pages workflow runs on main only, after tests pass. Enable GitHub Pages with source GitHub Actions after merging.
 The checks workflow runs on pushes and pull requests and uploads a preview artifact containing dist/.
+
+## September 16 bowler list update
+
+The supplied Bowler List (8).xlsx contains 94 rows, 93 positive EnteringAvg values, and no Team 20 rows. The app fills missing entering averages for 74 confidently matched names in the original roster on startup, cloud load, and backup restore. Existing averages, IDs, lineups, history, and actual results remain unchanged. Matching is by name and team, never by lineup position. Explicit spelling aliases are in dist/bowler-averages.js. The original Team 6 Robert/Bob Johnson identities remain unresolved against the source Bob/Bobby Johnson rows. Tyler Eisenhaur has EnteringAvg=0 and is treated as missing, not as a zero-average bowler. Source pins, games, and high scores are not fabricated into game sessions. Save league after loading to persist filled averages.

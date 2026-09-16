@@ -8,10 +8,10 @@ test('Confirmed roster preserves 20 teams, 96 names and four vacancies',()=>{
  assert.deepEqual(state.bowlers.filter(b=>b.vacancy).map(b=>b.team),[18,20,20,20]);
  assert.deepEqual(state.teams.find(t=>t.number===10).players.map(id=>state.bowlers.find(b=>b.id===id).name),['Jason Koval','Kayla Wright','Ashley Eakle','Christian Kramer','Doug Smith']);
  assert.equal(new Set(state.bowlers.map(b=>b.id)).size,100);
- assert.ok(state.bowlers.every(b=>b.entering===null));
+ assert.equal(state.bowlers.filter(b=>Number.isFinite(b.entering)).length,74);
  assert.ok(state.teams.every(t=>t.division===''));
- assert.equal(profile(state,state.bowlers[0]).mean,null);
- assert.equal(forecastIssues(state).filter(i=>i.startsWith('Entering average required:')).length,96);
+ assert.equal(profile(state,state.bowlers[0]).mean,182);
+ assert.equal(forecastIssues(state).filter(i=>i.startsWith('Entering average required:')).length,22);
  assert.throws(()=>loadConfirmedRoster(state),/empty workspace/);
  state.schedule=[{week:1,kind:'regular',pairs:[[18,20]]}];
  const template=scoresTemplate(state,1);assert.equal((template.match(/"vacancy","vacancy","vacancy"/g)||[]).length,4);
