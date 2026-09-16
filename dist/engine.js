@@ -1,9 +1,9 @@
 
-export const VERSION='monday-0.2.1';
+export const VERSION='monday-0.2.2';
 export const sum=a=>a.reduce((s,x)=>s+x,0);
 export const mean=a=>a.length?sum(a)/a.length:0;
 export const POSITION_WEEKS=[10,13,16,26,29,32];
-export function initialState(){return {schemaVersion:1,league:'Carbondale Commercial',season:'2026-2027',teams:[],bowlers:[],schedule:[],results:[],adjustments:{},halfWinners:{},runs:[],rules:{rounding:'floor',negativeHandicap:false,positionScope:'division',fillEightWithWildcards:false,assumptionsConfirmed:false},sourceNotes:['2026–2027 Carbondale Commercial Bowling League rules supplied by user.','Official roster assignments and schedule still required.']};}
+export function initialState(){return {schemaVersion:1,league:'Carbondale Commercial',season:'2026-2027',teams:[],bowlers:[],schedule:[],results:[],adjustments:{},halfWinners:{},runs:[],rules:{rounding:'floor',negativeHandicap:false,positionScope:'division',fillEightWithWildcards:true,assumptionsConfirmed:false},sourceNotes:['2026–2027 Carbondale Commercial Bowling League rules supplied by user.','Official roster assignments and schedule still required.']};}
 const fail=m=>{throw Error(m);};
 export function actualGames(state,id,before=33){return state.results.filter(r=>r.week<before&&r.actual!==false).sort((a,b)=>a.week-b.week).flatMap(r=>r.matches.flatMap(m=>m.players.filter(p=>p.bowlerId===id).flatMap(p=>p.scores.filter((g,i)=>p.types[i]==='actual'))));}
 export function leagueAverage(state,id,week){const b=state.bowlers.find(b=>b.id===id);if(!b)fail('Unknown bowler '+id);const games=actualGames(state,id,week);if(games.length>=9)return Math.floor(mean(games));if(!Number.isFinite(b.entering))fail('Entering average required for '+b.name);return Math.floor(b.entering);}
@@ -69,7 +69,6 @@ export function forecastIssues(state){
  if(!state.rules.assumptionsConfirmed)issues.push('Review and confirm forecast assumptions in Setup.');
  if(!provisional&&(state.teams.some(t=>!t.division?.trim())||divs.length!==count))issues.push('Complete all official assignments into '+count+' divisions, or clear all divisions for provisional random forecasts.');
  if(provisional&&Object.keys(state.halfWinners).length)issues.push('Enter official divisions before using recorded half winners.');
- if(count===3&&!state.rules.fillEightWithWildcards)issues.push('Three divisions provide six half-winner berths; confirm how the other two playoff spots are filled.');
  for(let w=1;w<=32;w++){if(state.results.some(r=>r.week===w))continue;const s=state.schedule.find(s=>s.week===w);if(!s)issues.push('Schedule missing Week '+w);else if(s.kind!=='position'){const ids=s.pairs.flat().filter(Boolean);if(ids.length!==state.teams.length||new Set(ids).size!==ids.length||ids.some(n=>!state.teams.some(t=>t.number===n)))issues.push('Incomplete/invalid schedule Week '+w);}}
  const weeks=state.results.map(r=>r.week).sort((a,b)=>a-b);
  if(weeks.some((w,i)=>w!==i+1))issues.push('Complete results in weekly order before simulating.');
@@ -105,6 +104,13 @@ export function profile(state,b){
  const mu=(sum(recent)+priorMean*30)/(recent.length+30),all=[...prior,...recent],avg=mean(all);
  const variance=(sum(all.map(x=>(x-avg)**2))+24*900)/(Math.max(0,all.length-1)+24);
  return {mean:mu,sd:Math.max(15,Math.sqrt(variance)),priorGames:prior.length,currentGames:recent.length};
+}
+// Division half winners seed first. Remaining berths go to the highest
+// full-season points among teams not already qualified.
+export function playoffSeeds(rows,winners,rankTies){
+ const qualifiers=new Set(winners);
+ const seeds=rankTies(rows.filter(r=>qualifiers.has(r.number)),32);
+ return seeds.concat(rankTies(rows.filter(r=>!qualifiers.has(r.number)),32).slice(0,8-seeds.length));
 }
 export function simulate(state,iterations=1000,seed=202627,onProgress=()=>{}){
  validateWorkspace(state);const issues=forecastIssues(state);if(issues.length)fail(issues.join('\n'));
@@ -168,10 +174,9 @@ export function simulate(state,iterations=1000,seed=202627,onProgress=()=>{}){
     }
    }
   }
-  const rows=standings(simulated),qualifiers=[...new Set(winners)];
+  const rows=standings(simulated);
   rows.forEach(r=>agg[r.number].points+=r.points);
-  const seeds=rankTies(rows.filter(r=>qualifiers.includes(r.number)),32);
-  seeds.push(...rankTies(rows.filter(r=>!qualifiers.includes(r.number)),32).slice(0,8-seeds.length));
+  const seeds=playoffSeeds(rows,winners,rankTies);
   seeds.forEach(n=>agg[n].playoffs++);
   const q1=duel(seeds[0],seeds[7],33),q2=duel(seeds[1],seeds[6],33),q3=duel(seeds[2],seeds[5],33),q4=duel(seeds[3],seeds[4],33);
   const s1=duel(q1,q4,34),s2=duel(q3,q2,34);agg[duel(s1,s2,35)].champion++;

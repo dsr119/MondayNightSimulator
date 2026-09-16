@@ -69,15 +69,15 @@
     "games": 3,
     "points": 30,
     "tieRolloffPoints": 9,
-    "reseed": false
+    "reseed": false,
+    "wildcards": "Highest full-season points among teams not already qualified; fill the eight-team field after unique division half winners."
   },
   "unresolved": [
     "Handicap rounding and negative handicap",
     "Position-round grouping and standings tiebreak order",
-    "Three divisions produce six half-winner berths; method of filling remaining two spots",
     "Multi-team half roll-offs and equal-record playoff seeding",
     "Vacancy individual-point treatment",
     "Playoff repeated tied roll-off resolution"
   ],
-  "source": "26-27 CARBONDALE COMMERCIAL BOWLING LEAGUE RULES.pdf"
+  "source": "26-27 CARBONDALE COMMERCIAL BOWLING LEAGUE RULES.pdf; wildcard selection confirmed by user 2026-09-16"
 }

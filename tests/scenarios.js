@@ -32,7 +32,7 @@ export function scenarios(){
  test('Floating substitute credited by ID',()=>{const s=fixture();s.bowlers.push({id:'sub',name:'Sub',entering:180,team:0,history:[]});const csv=scoreCSV().replace(',1-1,',',sub,');const n=importScores(s,csv);eq(playerStats(n,n.bowlers.find(b=>b.id==='sub')).games,3,'Sub actuals');eq(playerStats(n,n.bowlers[0]).games,0,'Regular absent');});
  test('Roster duplicates rejected',()=>throws(()=>importRoster(initialState(),TEMPLATES.roster+'1,Team,1,1,a,A,200\n1,Team,1,2,a,A,200')));
  test('Missing schedule blocks forecast',()=>{const s=fixture();s.schedule=[];assert(forecastIssues(s).some(x=>x.includes('Schedule missing')),'Missing schedule');});
- test('Three-division wildcard ambiguity blocks forecast',()=>{const s=fixture();s.rules.fillEightWithWildcards=false;assert(forecastIssues(s).some(x=>x.includes('six half-winner')),'Wildcard gate');});
+ test('Confirmed wildcard rule works with older saved settings',()=>{const s=fixture();s.rules.fillEightWithWildcards=false;eq(forecastIssues(s),[],'Confirmed rule no longer gated');});
  test('Invalid backup week duplication rejected',()=>{const s=importScores(fixture(),scoreCSV());s.results.push(structuredClone(s.results[0]));throws(()=>validateWorkspace(s));});
  test('Forecast seed reproducible, totals reconcile, actual week fixed',()=>{
   const s=importScores(fixture(),scoreCSV()),a=simulate(s,3,1234),b=simulate(s,3,1234);
@@ -77,7 +77,7 @@ export function scenarios(){
  });
  test('Pending twenty-team divisions retain other forecast gates',()=>{
   const s=fixture(20);s.teams.forEach(t=>t.division='');s.rules.fillEightWithWildcards=false;
-  assert(forecastIssues(s).some(i=>i.includes('six half-winner')),'Wildcard assumption still required');s.rules.fillEightWithWildcards=true;eq(forecastIssues(s),[],'Three random divisions ready');
+  eq(forecastIssues(s),[],'Confirmed wildcard rule');s.rules.fillEightWithWildcards=true;eq(forecastIssues(s),[],'Three random divisions ready');
   const r=simulate(s,2,42);for(let h=0;h<2;h++)assert(Math.abs(r.teams.reduce((n,t)=>n+t.halves[h],0)-3)<1e-8,'Three random half winners');
   s.halfWinners={'1:A':1};assert(forecastIssues(s).some(i=>i.includes('recorded half winners')),'Official override needs divisions');s.halfWinners={};
   s.schedule=[];s.bowlers[0].entering=null;
