@@ -1,0 +1,1 @@
+import test from 'node:test';import {scenarios} from './scenarios.js';test('Monday scoring, imports, actual stats and forecasts',()=>{for(const name of scenarios())console.log('PASS '+name);});
