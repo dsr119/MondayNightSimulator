@@ -26,7 +26,7 @@ export function importRoster(state,text){
   if(!r.bowler_id||!r.bowler)throw Error('Bowler ID and name are required.');
   if(bowlers.has(r.bowler_id))throw Error('Duplicate bowler ID '+r.bowler_id);
   const old=state.bowlers.find(b=>b.id===r.bowler_id);
-  bowlers.set(r.bowler_id,{id:r.bowler_id,name:r.bowler,team,entering:r.entering===''?null:num(r.entering,'entering average'),vacancy:r.status==='vacancy',history:old?.history||[]});
+  bowlers.set(r.bowler_id,{id:r.bowler_id,name:r.bowler,team,entering:r.entering===''?null:num(r.entering,'entering average'),vacancy:r.status==='vacancy',history:old?.history||[],...(old?.sex?{sex:old.sex}:{})});
   if(team){
    if(!r.team_name||slot<1)throw Error('Regular bowlers need a team name and slot 1–5.');
    let t=teams.get(team);if(!t){t={number:team,name:r.team_name,division:r.division,players:Array(5).fill(null)};teams.set(team,t);}
