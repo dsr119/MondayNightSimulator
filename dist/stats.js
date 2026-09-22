@@ -13,3 +13,24 @@ export function allPlay(state,week=0){
  }
  return rows.map(r=>({...r,pct:(r.wins+r.ties/2)/(r.wins+r.ties+r.losses||1)})).sort((a,b)=>b.pct-a.pct||a.number-b.number);
 }
+
+
+export function sexLeaders(state,sex){
+ const completedWeeks=new Set(state.results.map(r=>r.week)).size;
+ const minGames=completedWeeks>=5?Math.ceil(completedWeeks*3*2/3):1;
+ const rows=state.bowlers
+  .filter(b=>b.sex===sex)
+  .map(b=>playerStats(state,b))
+  .filter(r=>r.games>=minGames);
+ const top=(key)=>rows.filter(r=>r[key]!=null).sort((a,b)=>(b[key]??-Infinity)-(a[key]??-Infinity)||a.name.localeCompare(b.name))[0]||null;
+ return {
+  sex,
+  completedWeeks,
+  minGames,
+  eligible:rows.length,
+  average:top('average'),
+  pins:top('pins'),
+  game:top('high'),
+  series:top('highSeries')
+ };
+}
