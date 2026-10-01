@@ -129,19 +129,21 @@ export function drawLineup(pool,rng,used=new Set()){
  while(out.length<5&&left.length){let r=rng()*sum(left.map(p=>p.weight)),i=0;while(i<left.length-1&&(r-=left[i].weight)>=0)i++;out.push(left.splice(i,1)[0].id);}
  return out;
 }
-export function simulate(state,iterations=1000,seed=202627,onProgress=()=>{}){
+// options.profiles/options.pools override the bowler models and rotation pools
+// (used by what-if leagues); options.rotating lists teams that always rotate.
+export function simulate(state,iterations=1000,seed=202627,onProgress=()=>{},options={}){
  validateWorkspace(state);const issues=forecastIssues(state);if(issues.length)fail(issues.join('\n'));
  if(!Number.isInteger(iterations)||iterations<1||iterations>20000)fail('Choose 1–20,000 simulations.');
  const rng=random(seed),normal=()=>Math.sqrt(-2*Math.log(Math.max(1e-12,rng())))*Math.cos(2*Math.PI*rng());
  const nums=state.teams.map(t=>t.number),teamMap=Object.fromEntries(state.teams.map(t=>[t.number,t]));
- const profiles=Object.fromEntries(state.bowlers.map(b=>[b.id,profile(state,b)]));
- const rotating=state.rules.lineupModel!=='fixed',pools=Object.fromEntries(state.teams.map(t=>[t.number,rotationPool(state,t)]));
+ const profiles=options.profiles||Object.fromEntries(state.bowlers.map(b=>[b.id,profile(state,b)]));
+ const rotating=state.rules.lineupModel!=='fixed',pools=options.pools||Object.fromEntries(state.teams.map(t=>[t.number,rotationPool(state,t)])),alwaysRotate=new Set(options.rotating||[]);
  const agg=Object.fromEntries(nums.map(n=>[n,{number:n,points:0,halfPoints:[0,0],halves:[0,0],playoffs:0,champion:0}]));
  const weekly=Array.from({length:32},(_,i)=>({week:i+1,teams:Object.fromEntries(nums.map(n=>[n,{number:n,points:0,win:0,tie:0,opponents:{}}]))}));
  for(let run=0;run<iterations;run++){
   const simulated=structuredClone(state);simulated.runs=[];simulated.teams=assignSimulationDivisions(state,rng);
   const winners=[];
-  const lineup=(team,used)=>{if(!rotating||pools[team].length<5)return teamMap[team].players;const ids=drawLineup(pools[team],rng,used);if(ids.length<5)return teamMap[team].players;ids.forEach(id=>used.add(id));return ids;};
+  const lineup=(team,used)=>{if(!(rotating||alwaysRotate.has(team))||pools[team].length<5)return teamMap[team].players;const ids=drawLineup(pools[team],rng,used);if(ids.length<5)return teamMap[team].players;ids.forEach(id=>used.add(id));return ids;};
   const makeMatch=(a,b,w,used=new Set())=>{
    const shared=normal()*5,players=[];
    for(const team of [a,b].filter(Boolean))lineup(team,used).forEach((id,slot)=>{
