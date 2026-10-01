@@ -58,7 +58,7 @@ Entering averages are supplied by the administrator after applying Rule 6; the p
 
 ## Model assumptions and limits
 
-- Five saved starters bowl in saved order, with no projected absences. Future lineup strategies are not modeled.
+- Rotating rosters (default): each simulated night draws five distinct bowlers per team, weighted by actual games bowled for that team this season plus one night of weight for the saved lineup. Subs who have bowled for a team join its pool. No projected absences or blinds. Setup can switch to a fixed saved five.
 - A bowler's simulated average updates after nine games; weekly handicap uses the floor of cumulative average. Handicap rounding is configurable.
 - Model mean blends prior history / entering average and actual current scores, with a 30-game prior weight. Variance is regularized toward 30 pins; shared lane/night variation is included.
 - Two halves of 16 weeks; position rounds in Weeks 10,13,16,26,29,32.
