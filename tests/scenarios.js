@@ -1,5 +1,5 @@
 
-import {initialState,scoreMatch,handicap,leagueAverage,simulate,forecastIssues,validateWorkspace,inputKey,assignSimulationDivisions,random} from '../dist/engine.js';
+import {initialState,scoreMatch,handicap,leagueAverage,simulate,forecastIssues,validateWorkspace,inputKey,assignSimulationDivisions,random,rotationPool,drawLineup} from '../dist/engine.js';
 import {parseCSV,importRoster,importSchedule,importScores,TEMPLATES} from '../dist/imports.js';
 import {playerStats} from '../dist/stats.js';
 export function scenarios(){
@@ -83,6 +83,18 @@ export function scenarios(){
   s.schedule=[];s.bowlers[0].entering=null;
   assert(forecastIssues(s).some(i=>i.includes('Schedule missing')),'Schedule still required');
   assert(forecastIssues(s).some(i=>i.includes('Entering average required')),'Average still required');
+ });
+ test('Rotating rosters weight bowlers by games bowled for the team',()=>{
+  const s=fixture(8);s.bowlers.push({id:'sub',name:'Sub',entering:180,team:0,history:[]});
+  const players=[...s.teams[0].players.slice(0,4).map((id,i)=>({team:1,slot:i+1,bowlerId:id,average:200,handicap:34,types:['actual','actual','actual'],scores:[200,200,200]})),{team:1,slot:5,bowlerId:'sub',average:180,handicap:51,types:['actual','actual','blind'],scores:[180,180,170]}];
+  for(let t=2;t<=8;t++)s.teams[t-1].players.forEach((id,i)=>players.push({team:t,slot:i+1,bowlerId:id,average:200,handicap:34,types:['actual','actual','actual'],scores:[200,200,200]}));
+  s.results.push({week:1,actual:true,matches:[1,3,5,7].map(a=>({teamA:a,teamB:a+1,players:players.filter(p=>p.team===a||p.team===a+1)}))});validateWorkspace(s);
+  const pool=rotationPool(s,s.teams[0]);
+  eq(pool.map(p=>[p.id,p.weight]),[['1-1',6],['1-2',6],['1-3',6],['1-4',6],['1-5',3],['sub',2]],'Games plus saved-lineup weight');
+  const rng=random(7);for(let i=0;i<50;i++){const ids=drawLineup(pool,rng);eq(new Set(ids).size,5,'Five distinct bowlers');}
+  eq(drawLineup(pool,rng,new Set(['1-1','1-2'])).length,4,'Bowlers already used that night are skipped');
+  const r=simulate(s,3,11);assert(Math.abs(r.teams.reduce((n,t)=>n+t.playoffs,0)-8)<1e-8,'Rotation forecast runs');
+  s.rules.lineupModel='fixed';assert(Math.abs(simulate(s,3,11).teams.reduce((n,t)=>n+t.champion,0)-1)<1e-8,'Fixed lineup still available');
  });
  return passed;
 }

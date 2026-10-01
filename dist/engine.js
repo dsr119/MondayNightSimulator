@@ -1,9 +1,9 @@
 
-export const VERSION='monday-0.2.2';
+export const VERSION='monday-0.3.0';
 export const sum=a=>a.reduce((s,x)=>s+x,0);
 export const mean=a=>a.length?sum(a)/a.length:0;
 export const POSITION_WEEKS=[10,13,16,26,29,32];
-export function initialState(){return {schemaVersion:1,league:'Carbondale Commercial',season:'2026-2027',teams:[],bowlers:[],schedule:[],results:[],adjustments:{},halfWinners:{},runs:[],rules:{rounding:'floor',negativeHandicap:false,positionScope:'division',fillEightWithWildcards:true,assumptionsConfirmed:false},sourceNotes:['2026–2027 Carbondale Commercial Bowling League rules supplied by user.','Official roster assignments and schedule still required.']};}
+export function initialState(){return {schemaVersion:1,league:'Carbondale Commercial',season:'2026-2027',teams:[],bowlers:[],schedule:[],results:[],adjustments:{},halfWinners:{},runs:[],rules:{rounding:'floor',negativeHandicap:false,lineupModel:'rotation',positionScope:'division',fillEightWithWildcards:true,assumptionsConfirmed:false},sourceNotes:['2026–2027 Carbondale Commercial Bowling League rules supplied by user.','Official roster assignments and schedule still required.']};}
 const fail=m=>{throw Error(m);};
 export function actualGames(state,id,before=33){return state.results.filter(r=>r.week<before&&r.actual!==false).sort((a,b)=>a.week-b.week).flatMap(r=>r.matches.flatMap(m=>m.players.filter(p=>p.bowlerId===id).flatMap(p=>p.scores.filter((g,i)=>p.types[i]==='actual'))));}
 export function leagueAverage(state,id,week){const b=state.bowlers.find(b=>b.id===id);if(!b)fail('Unknown bowler '+id);const games=actualGames(state,id,week);if(games.length>=9)return Math.floor(mean(games));if(!Number.isFinite(b.entering))fail('Entering average required for '+b.name);return Math.floor(b.entering);}
@@ -112,20 +112,39 @@ export function playoffSeeds(rows,winners,rankTies){
  const seeds=rankTies(rows.filter(r=>qualifiers.has(r.number)),32);
  return seeds.concat(rankTies(rows.filter(r=>!qualifiers.has(r.number)),32).slice(0,8-seeds.length));
 }
+// Rotating rosters: each simulated night draws five bowlers in proportion to the
+// actual games they have bowled for the team; the saved lineup adds one night of weight.
+export function rotationPool(state,team){
+ const weights=new Map(team.players.map(id=>[id,3]));
+ for(const r of state.results)for(const m of r.matches)for(const p of m.players){
+  if(p.team!==team.number)continue;const games=p.types.filter(t=>t==='actual').length;
+  if(games&&state.bowlers.some(b=>b.id===p.bowlerId))weights.set(p.bowlerId,(weights.get(p.bowlerId)||0)+games);
+ }
+ const pool=[...weights].filter(([id])=>{const b=state.bowlers.find(b=>b.id===id);return b&&!b.vacancy&&Number.isFinite(b.entering);}).map(([id,weight])=>({id,weight}));
+ const total=sum(pool.map(p=>p.weight));
+ return pool.map(p=>({...p,share:total?Math.min(1,5*p.weight/total):0})).sort((a,b)=>b.weight-a.weight);
+}
+export function drawLineup(pool,rng,used=new Set()){
+ const left=pool.filter(p=>!used.has(p.id)),out=[];
+ while(out.length<5&&left.length){let r=rng()*sum(left.map(p=>p.weight)),i=0;while(i<left.length-1&&(r-=left[i].weight)>=0)i++;out.push(left.splice(i,1)[0].id);}
+ return out;
+}
 export function simulate(state,iterations=1000,seed=202627,onProgress=()=>{}){
  validateWorkspace(state);const issues=forecastIssues(state);if(issues.length)fail(issues.join('\n'));
  if(!Number.isInteger(iterations)||iterations<1||iterations>20000)fail('Choose 1–20,000 simulations.');
  const rng=random(seed),normal=()=>Math.sqrt(-2*Math.log(Math.max(1e-12,rng())))*Math.cos(2*Math.PI*rng());
  const nums=state.teams.map(t=>t.number),teamMap=Object.fromEntries(state.teams.map(t=>[t.number,t]));
  const profiles=Object.fromEntries(state.bowlers.map(b=>[b.id,profile(state,b)]));
+ const rotating=state.rules.lineupModel!=='fixed',pools=Object.fromEntries(state.teams.map(t=>[t.number,rotationPool(state,t)]));
  const agg=Object.fromEntries(nums.map(n=>[n,{number:n,points:0,halfPoints:[0,0],halves:[0,0],playoffs:0,champion:0}]));
  const weekly=Array.from({length:32},(_,i)=>({week:i+1,teams:Object.fromEntries(nums.map(n=>[n,{number:n,points:0,win:0,tie:0,opponents:{}}]))}));
  for(let run=0;run<iterations;run++){
   const simulated=structuredClone(state);simulated.runs=[];simulated.teams=assignSimulationDivisions(state,rng);
   const winners=[];
-  const makeMatch=(a,b,w)=>{
+  const lineup=(team,used)=>{if(!rotating||pools[team].length<5)return teamMap[team].players;const ids=drawLineup(pools[team],rng,used);if(ids.length<5)return teamMap[team].players;ids.forEach(id=>used.add(id));return ids;};
+  const makeMatch=(a,b,w,used=new Set())=>{
    const shared=normal()*5,players=[];
-   for(const team of [a,b].filter(Boolean))teamMap[team].players.forEach((id,slot)=>{
+   for(const team of [a,b].filter(Boolean))lineup(team,used).forEach((id,slot)=>{
     const p=profiles[id],adj=state.adjustments[id],fraction=adj?(adj.end===adj.start?(w>=adj.start?1:0):Math.max(0,Math.min(1,(w-adj.start)/(adj.end-adj.start)))):0;
     const mu=Math.max(0,Math.min(300,p.mean+(adj?.delta||0)*fraction)),night=normal()*8;
     const average=leagueAverage(simulated,id,w),h=handicap(average,state.rules);
@@ -159,7 +178,7 @@ export function simulate(state,iterations=1000,seed=202627,onProgress=()=>{}){
      const groups=state.rules.positionScope==='league'?[rows]:[...new Set(rows.map(r=>r.division))].map(d=>rows.filter(r=>r.division===d));
      for(const group of groups)for(let i=0;i<group.length;i+=2)pairs.push([group[i].number,group[i+1]?.number||0]);
     }
-    result={week:w,actual:true,matches:pairs.map(([a,b])=>makeMatch(a,b,w))};simulated.results.push(result);
+    const used=new Set();result={week:w,actual:true,matches:pairs.map(([a,b])=>makeMatch(a,b,w,used))};simulated.results.push(result);
    }
    for(const m of result.matches){const p=scoreMatch(m).points;[m.teamA,m.teamB].forEach((n,i)=>{if(!n)return;const opp=i?m.teamA:m.teamB,t=weekly[w-1].teams[n],o=t.opponents[opp]??={number:opp,count:0,points:0,win:0,tie:0};const won=p[i]>(opp?p[1-i]:15),tie=p[i]===(opp?p[1-i]:15);t.points+=p[i];t.win+=won;t.tie+=tie;o.count++;o.points+=p[i];o.win+=won;o.tie+=tie;});}
    if(w===16||w===32){
