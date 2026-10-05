@@ -105,6 +105,11 @@ export function profile(state,b){
  const variance=(sum(all.map(x=>(x-avg)**2))+24*900)/(Math.max(0,all.length-1)+24);
  return {mean:mu,sd:Math.max(15,Math.sqrt(variance)),priorGames:prior.length,currentGames:recent.length};
 }
+// A bowler's expected game in week w: the skill model plus any phased-in adjustment.
+export function weekMean(state,p,id,w){
+ const adj=state.adjustments[id],fraction=adj?(adj.end===adj.start?(w>=adj.start?1:0):Math.max(0,Math.min(1,(w-adj.start)/(adj.end-adj.start)))):0;
+ return Math.max(0,Math.min(300,p.mean+(adj?.delta||0)*fraction));
+}
 // Division half winners seed first. Remaining berths go to the highest
 // full-season points among teams not already qualified.
 export function playoffSeeds(rows,winners,rankTies){
@@ -147,8 +152,7 @@ export function simulate(state,iterations=1000,seed=202627,onProgress=()=>{},opt
   const makeMatch=(a,b,w,used=new Set())=>{
    const shared=normal()*5,players=[];
    for(const team of [a,b].filter(Boolean))lineup(team,used).forEach((id,slot)=>{
-    const p=profiles[id],adj=state.adjustments[id],fraction=adj?(adj.end===adj.start?(w>=adj.start?1:0):Math.max(0,Math.min(1,(w-adj.start)/(adj.end-adj.start)))):0;
-    const mu=Math.max(0,Math.min(300,p.mean+(adj?.delta||0)*fraction)),night=normal()*8;
+    const p=profiles[id],mu=weekMean(state,p,id,w),night=normal()*8;
     const average=leagueAverage(simulated,id,w),h=handicap(average,state.rules);
     players.push({bowlerId:id,team,slot:slot+1,average,handicap:h,types:['actual','actual','actual'],scores:Array.from({length:3},()=>Math.max(0,Math.min(300,Math.round(mu+shared+night+normal()*Math.sqrt(Math.max(1,p.sd*p.sd-89))))))});
    });return {teamA:a,teamB:b,players};
