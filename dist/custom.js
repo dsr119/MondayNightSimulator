@@ -28,7 +28,7 @@ function attempt(){
  catch(e){return {error:e.message};}
 }
 function render(){
- const nav='<nav><a class="nav-button" href="./"><span class="nav-index">←</span>League app</a><a class="nav-button active" href="./custom.html"><span class="nav-index">★</span>Build a team</a></nav>';
+ const nav='<nav><a class="nav-button" href="./"><span class="nav-index">←</span>League app</a><a class="nav-button active" href="./custom.html"><span class="nav-index">★</span>Build a team</a><a class="nav-button" href="./lineup.html"><span class="nav-index">⇄</span>Lineup planner</a></nav>';
  $('#app').innerHTML='<div class="shell"><aside class="sidebar"><div class="brand">Monday Night<span>CARBONDALE COMMERCIAL</span></div><div class="season-tag">2026–2027 · Valley Bowling Lanes</div>'+nav+'<div class="sidebar-foot">What-if team builder<strong>Nothing here changes your league</strong></div></aside><main class="main"><header class="topbar"><span>'+esc(cloud.email||'Local workspace')+'</span><div class="top-actions">'+(cloud.email?'<button data-action="load" '+(busy?'disabled':'')+'>Load saved league</button>':'')+'</div></header>'+body()+'<footer class="footer"><span>Hypothetical season. Results are not saved to the league.</span><span>'+VERSION+'</span></footer></main></div>';
 }
 function body(){
